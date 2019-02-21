@@ -40,7 +40,7 @@ const Peer = window.Peer;
             var text = src;
 
             ctx.clearRect(0, 0, 400, 400);
-            ctx.font = "italic 40px Arial";
+            ctx.font = "italic 20px Arial";
             ctx.fillText(text, remote_x, remote_y);
 
         });
