@@ -5,6 +5,7 @@ const Peer = window.Peer;
     const roomId = document.getElementById('js-room-id');
     const myColorCode = document.getElementById('js-color-code');
     const wrapper = document.getElementById('cvs-wrapper');
+    const clearPoint = document.getElementById('js-clear-point');
     // canvas サイズ
     const baseImage = document.getElementById('base-image');
     const canvas = document.getElementById('cvs');
@@ -63,20 +64,26 @@ const Peer = window.Peer;
         });
 
         room.on('data', ({ data, src }) => {
-            const remote_x = data['x'];
-            const remote_y = data['y'];
-            const remoteColor = data['color'];
             const cvsId = 'cvs-' + src
-
             const remoteCanvas = document.getElementById(cvsId);
             const remoteCtx = remoteCanvas.getContext('2d');
-            
             remoteCtx.clearRect(0, 0, canvas_w, canvas_h);
-            remoteCtx.beginPath();
-            remoteCtx.fillStyle = remoteColor;
-            remoteCtx.arc(remote_x, remote_y, 5, 0, Math.PI * 2, false);
-            remoteCtx.fill();
+            if (data['clear'] == false) {
+                const remote_x = data['x'];
+                const remote_y = data['y'];
+                const remoteColor = data['color'];
+                
+                remoteCtx.beginPath();
+                remoteCtx.fillStyle = remoteColor;
+                remoteCtx.arc(remote_x, remote_y, 5, 0, Math.PI * 2, false);
+                remoteCtx.fill();
+            }
         });
+
+        clearPoint.onclick = (e) => {
+            ctx.clearRect(0, 0, canvas_w, canvas_h);
+            room.send({'clear': true});
+        }
 
         canvas.onclick = function(e) {
             ctx.clearRect(0, 0, canvas_w, canvas_h);
@@ -96,7 +103,8 @@ const Peer = window.Peer;
             var cd = {
                 'x': mouse_x,
                 'y': mouse_y,
-                'color': myColorCode.value
+                'color': myColorCode.value,
+                'clear': false
             };
             room.send(cd);
         }
