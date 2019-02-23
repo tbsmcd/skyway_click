@@ -39,31 +39,24 @@ const Peer = window.Peer;
         if (!peer.open) {
             return;
         }
+        document.getElementById('peer-id').textContent = 'PEER ID: ' + peer.id;
         const room = peer.joinRoom(roomId.value, {
             mode: location.hash === '#sfu' ? 'sfu' : 'mesh'
         });
-        // 現時点の自分以外のユーザ用の canvas を設置
-        peer.listAllPeers(peers => {
-            for (let v of peers) {
-                if (v != peer.id && document.getElementById('cvs-' + v) == null) {
-                    addCvs('cvs-' + v);
-                }
-            }
-        });
-        // 新規ユーザが入室した場合に canvas を追加
-        room.on('peerJoin', peerId => {
-            // canvas を追加する
-            if (document.getElementById('cvs-' + peerId) == null) {
-                addCvs('cvs-' + peer.id);
-            }
-        });
-        // ユーザが退室した場合 canvas を削除
+
+        // ユーザが退室したときに canvas を削除する
         room.on('peerLeave', peerId => {
             const remoteCvs = document.getElementById('cvs-' + peerId);
-            remoteCvs.parentNode.removeChild(remoteCvs);
+            if (remoteCvs != null) {
+                remoteCvs.parentNode.removeChild(remoteCvs);
+            }
         });
 
         room.on('data', ({ data, src }) => {
+            // canvas が存在しない場合は追加する
+            if (document.getElementById('cvs-' + src) == null) {
+                addCvs('cvs-' + src);
+            }
             const cvsId = 'cvs-' + src
             const remoteCanvas = document.getElementById(cvsId);
             const remoteCtx = remoteCanvas.getContext('2d');
@@ -85,7 +78,7 @@ const Peer = window.Peer;
             room.send({'clear': true});
         }
 
-        canvas.onclick = function(e) {
+        canvas.onmousemove = function(e) {
             ctx.clearRect(0, 0, canvas_w, canvas_h);
             const rect = e.target.getBoundingClientRect();
             mouse_x = e.clientX - Math.floor(rect.left);
