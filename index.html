@@ -6,10 +6,14 @@
     </head>
     <body>
         <input type="text" placeholder="Room Name" id="js-room-id">
+        <input type="text" placeholder="Color" id="js-color-code">
         <button id="js-join-trigger">Join</button>
-        <div id="cvs-wrapper">
-            <canvas id="cvs"></canvas>
-        </div>
+        
+            <div id="cvs-wrapper">
+                <img id="base-image" src="echo.gif" alt="echo">
+                <canvas id="cvs"></canvas>
+            </div>
+        
         <script src="//cdn.webrtc.ecl.ntt.com/skyway-latest.js"></script>
         <script src="script.js"></script>
     </body>

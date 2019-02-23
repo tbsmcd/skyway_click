@@ -3,21 +3,31 @@ const Peer = window.Peer;
 (async function main() {
     const joinTrigger = document.getElementById('js-join-trigger');
     const roomId = document.getElementById('js-room-id');
+    const myColorCode = document.getElementById('js-color-code');
+    const wrapper = document.getElementById('cvs-wrapper');
     // canvas サイズ
-    const canvas_w = 400;
-    const canvas_h = 400;
+    const baseImage = document.getElementById('base-image');
+    const canvas = document.getElementById('cvs');
+    const canvas_w = baseImage.width;
+    const canvas_h = baseImage.height;
+    canvas.width = canvas_w;
+    canvas.height = canvas_h;
+    wrapper.setAttribute('style', 'width:' + canvas_w + ';height:' + canvas_h);
+    
     // マウス座標
     var mouse_x;
     var mouse_y;
     // API キー
     const skyway_key = '559b379c-14f9-4417-bc10-8c7f673e0173';
-    const room_id = 'testroom01';
-
-    const canvas = document.getElementById('cvs');
-    canvas.width = canvas_w
-    canvas.height = canvas_h
     const ctx = canvas.getContext('2d');
 
+    function addCvs(id) {
+        const cvs = document.createElement('canvas');
+        cvs.id = id;
+        cvs.width = canvas_w;
+        cvs.height = canvas_h;
+        wrapper.insertBefore(cvs, baseImage.nextSibling);
+    }
 
     // SkyWay の実装
     const peer = new Peer({
@@ -31,39 +41,64 @@ const Peer = window.Peer;
         const room = peer.joinRoom(roomId.value, {
             mode: location.hash === '#sfu' ? 'sfu' : 'mesh'
         });
+        // 現時点の自分以外のユーザ用の canvas を設置
+        peer.listAllPeers(peers => {
+            for (let v of peers) {
+                if (v != peer.id && document.getElementById('cvs-' + v) == null) {
+                    addCvs('cvs-' + v);
+                }
+            }
+        });
+        // 新規ユーザが入室した場合に canvas を追加
+        room.on('peerJoin', peerId => {
+            // canvas を追加する
+            if (document.getElementById('cvs-' + peerId) == null) {
+                addCvs('cvs-' + peer.id);
+            }
+        });
+        // ユーザが退室した場合 canvas を削除
+        room.on('peerLeave', peerId => {
+            const remoteCvs = document.getElementById('cvs-' + peerId);
+            remoteCvs.parentNode.removeChild(remoteCvs);
+        });
+
         room.on('data', ({ data, src }) => {
-            // Show a message sent to the room and who sent
-            console.log(data);
-            var cd_raw = JSON.parse(data);
-            var remote_x = cd_raw['x'];
-            var remote_y = cd_raw['y'];
-            var text = src;
+            const remote_x = data['x'];
+            const remote_y = data['y'];
+            const remoteColor = data['color'];
+            const cvsId = 'cvs-' + src
 
-            ctx.clearRect(0, 0, 400, 400);
-            ctx.font = "italic 20px Arial";
-            ctx.fillText(text, remote_x, remote_y);
-
+            const remoteCanvas = document.getElementById(cvsId);
+            const remoteCtx = remoteCanvas.getContext('2d');
+            
+            remoteCtx.clearRect(0, 0, canvas_w, canvas_h);
+            remoteCtx.beginPath();
+            remoteCtx.fillStyle = remoteColor;
+            remoteCtx.arc(remote_x, remote_y, 5, 0, Math.PI * 2, false);
+            remoteCtx.fill();
         });
 
         canvas.onclick = function(e) {
-            ctx.clearRect(0, 0, 400, 400);
+            ctx.clearRect(0, 0, canvas_w, canvas_h);
             const rect = e.target.getBoundingClientRect();
-            mouse_x = e.clientX - Math.floor(rect.left)
-            mouse_y = e.clientY - Math.floor(rect.top)
+            mouse_x = e.clientX - Math.floor(rect.left);
+            mouse_y = e.clientY - Math.floor(rect.top);
+
+            console.log(mouse_x);
     
             // 点の描画
             ctx.beginPath();
+            ctx.fillStyle = myColorCode.value;
             ctx.arc(mouse_x, mouse_y, 5, 0, Math.PI * 2, false);
             ctx.fill();
 
             // 座標の送出
-            var cd = JSON.stringify({
+            var cd = {
                 'x': mouse_x,
-                'y': mouse_y
-            });
+                'y': mouse_y,
+                'color': myColorCode.value
+            };
             room.send(cd);
         }
     });
-    
-    
 })();
