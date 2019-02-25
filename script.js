@@ -73,7 +73,7 @@ const Peer = window.Peer;
             }
         });
 
-        clearPoint.onclick = (e) => {
+        canvas.onmouseout = (e) => {
             ctx.clearRect(0, 0, canvas_w, canvas_h);
             room.send({'clear': true});
         }
